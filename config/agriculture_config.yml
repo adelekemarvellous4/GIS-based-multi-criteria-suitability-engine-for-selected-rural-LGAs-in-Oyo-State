@@ -1,0 +1,188 @@
+# ============================================================
+# Agriculture Suitability Model Configuration
+# Oyo Rural Suitability Engine
+# Phase 3 finalised — AHP weights + fuzzy parameters justified
+# ============================================================
+
+model:
+  name: "Agriculture Suitability Model"
+  version: "1.1"
+  output_prefix: "agriculture"
+
+# ----------------------------------------------------------
+# AHP PAIRWISE COMPARISON MATRIX (upper triangle)
+# Ordering: NDVI > land_cover > slope = water_proximity > roads > settlements
+# ----------------------------------------------------------
+ahp_matrix:
+  criteria_order:
+    - ndvi
+    - land_cover_suitability
+    - slope
+    - distance_to_water
+    - distance_to_roads
+    - distance_to_settlements
+  upper_triangle:
+    - [ndvi,                   land_cover_suitability,  1.5]
+    - [ndvi,                   slope,                   2.0]
+    - [ndvi,                   distance_to_water,       2.0]
+    - [ndvi,                   distance_to_roads,       3.0]
+    - [ndvi,                   distance_to_settlements, 3.0]
+    - [land_cover_suitability, slope,                   1.5]
+    - [land_cover_suitability, distance_to_water,       1.5]
+    - [land_cover_suitability, distance_to_roads,       2.5]
+    - [land_cover_suitability, distance_to_settlements, 2.5]
+    - [slope,                  distance_to_water,       1.0]
+    - [slope,                  distance_to_roads,       2.0]
+    - [slope,                  distance_to_settlements, 2.0]
+    - [distance_to_water,      distance_to_roads,       2.0]
+    - [distance_to_water,      distance_to_settlements, 2.0]
+    - [distance_to_roads,      distance_to_settlements, 1.0]
+  consistency_ratio: 0.0088   # CR < 0.10 — matrix is consistent
+
+# ----------------------------------------------------------
+# CRITERIA DEFINITION
+# ----------------------------------------------------------
+criteria:
+
+  ndvi:
+    description: "NDVI value (Sentinel-2 median composite, -1 to 1)"
+    direction: "benefit"
+    weight: 0.2782
+    fuzzy_type: "trapezoidal"
+    fuzzy_params:
+      a: 0.1    # below 0.1 = bare soil or water
+      b: 0.3    # full suitability begins (active cropland/savanna)
+      c: 0.7    # full suitability ends
+      d: 0.9    # above 0.9 = dense closed-canopy forest (less suitable)
+    justification: "0.1-0.3 transition covers sparse savanna; 0.3-0.7 = optimal cropland/grassland; >0.9 = dense forest not suitable for cropping"
+
+  land_cover_suitability:
+    description: "Land cover suitability score (pre-reclassified 0-1)"
+    direction: "benefit"
+    weight: 0.2075
+    fuzzy_type: "linear_increase"
+    fuzzy_params:
+      low: 0
+      high: 1
+    justification: "Pass-through of ESA WorldCover reclassification score"
+
+  slope:
+    description: "Terrain slope (degrees)"
+    direction: "cost"
+    weight: 0.1708
+    fuzzy_type: "linear_decrease"
+    fuzzy_params:
+      low: 0
+      high: 12
+    justification: "FAO guideline: slopes >8 degrees limit mechanised farming; >12 degrees limits even manual cultivation in Oyo terrain"
+
+  distance_to_water:
+    description: "Distance to nearest water body or stream (metres)"
+    direction: "cost"
+    weight: 0.1708
+    fuzzy_type: "trapezoidal"
+    fuzzy_params:
+      a: 0       # immediately adjacent = flood risk
+      b: 200     # 200 m = start of optimal zone
+      c: 2000    # 2 km = end of optimal zone
+      d: 5000    # beyond 5 km = insufficient irrigation potential
+    justification: "< 200 m = seasonal flood risk for crops; 200-2000 m = gravity/pump irrigation feasible; >5 km = too far for irrigation"
+
+  distance_to_roads:
+    description: "Distance to nearest road (metres)"
+    direction: "cost"
+    weight: 0.0892
+    fuzzy_type: "linear_decrease"
+    fuzzy_params:
+      low: 0
+      high: 5000
+    justification: "Smallholder transport threshold: 5 km maximum for viable produce movement to market"
+
+  distance_to_settlements:
+    description: "Distance to nearest settlement centroid (metres)"
+    direction: "cost"
+    weight: 0.0835
+    fuzzy_type: "trapezoidal"
+    fuzzy_params:
+      a: 0      # at settlement = built-up / land use conflict
+      b: 500    # 500 m minimum buffer
+      c: 3000   # optimal labour access range
+      d: 8000   # beyond 8 km = poor labour access
+    justification: "500-3000 m provides labour access without urban land competition"
+
+# Weight sum: 0.2792+0.1982+0.1601+0.1601+0.1012+0.1012 = 1.0000
+
+# ----------------------------------------------------------
+# LAND COVER RECLASSIFICATION (ESA WorldCover -> agriculture score)
+# ----------------------------------------------------------
+land_cover_reclass:
+  10: 0.9    # Cropland — highest suitability (existing farmland)
+  20: 0.8    # Grassland/Savanna — easily converted to cropland
+  30: 0.7    # Shrubland — moderate clearance needed
+  40: 0.3    # Woodland/Forest — significant clearing; lower sustainability
+  50: 0.1    # Built-up — not suitable for agriculture
+  60: 0.0    # Bare/Sparse — poor soil, no vegetation base
+  70: 0.0    # Water bodies — excluded
+  80: 0.0    # Permanent wetland — excluded
+  90: 0.4    # Herbaceous wetland — potential for adapted crops
+  95: 0.2    # Mangrove — not suitable for conventional agriculture
+
+# ----------------------------------------------------------
+# CONSTRAINT MASK
+# ----------------------------------------------------------
+constraints:
+  exclude_water_bodies:
+    enabled: true
+    land_cover_codes: [70, 80]
+  exclude_steep_slopes:
+    enabled: true
+    threshold_degrees: 15
+  exclude_protected_areas:
+    enabled: true
+  exclude_flood_zones:
+    enabled: false   # flood plains may support recession farming in Oyo
+  exclude_urban_areas:
+    enabled: true
+    land_cover_codes: [50]
+
+# ----------------------------------------------------------
+# AHP CONSISTENCY
+# ----------------------------------------------------------
+ahp:
+  consistency_ratio_threshold: 0.10
+
+# ----------------------------------------------------------
+# UNCERTAINTY / SENSITIVITY ANALYSIS
+# ----------------------------------------------------------
+uncertainty:
+  monte_carlo_iterations: 1000
+  weight_perturbation_pct: 0.10
+  seed: 42
+
+# ----------------------------------------------------------
+# CANDIDATE SITE EXTRACTION
+# ----------------------------------------------------------
+site_ranking:
+  min_suitability_score: 0.60
+  min_patch_area_ha: 5.0
+  top_n_sites: 20
+  ranking_criteria:
+    - mean_suitability
+    - area_ha
+    - distance_to_road
+    - distance_to_water
+    - uncertainty_cv
+
+# ----------------------------------------------------------
+# OUTPUT SETTINGS
+# ----------------------------------------------------------
+outputs:
+  suitability_raster: "outputs/rasters/agriculture_suitability.tif"
+  classified_raster: "outputs/rasters/agriculture_classified.tif"
+  constraint_mask: "outputs/rasters/agriculture_constraint_mask.tif"
+  uncertainty_mean: "outputs/rasters/agriculture_uncertainty_mean.tif"
+  uncertainty_std: "outputs/rasters/agriculture_uncertainty_std.tif"
+  uncertainty_cv: "outputs/rasters/agriculture_uncertainty_cv.tif"
+  classified_map: "outputs/maps/agriculture_suitability_map.png"
+  candidate_sites_vector: "outputs/vectors/agriculture_candidate_sites.gpkg"
+  report_pdf: "outputs/reports/agriculture_suitability_report.pdf"

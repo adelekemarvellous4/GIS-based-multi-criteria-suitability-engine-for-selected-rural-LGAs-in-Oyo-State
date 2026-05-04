@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Data (raw and processed — use Git LFS or external storage for large files)
+data/raw/
+data/interim/
+data/processed/
+data/external/
+
+# Outputs (generated files)
+outputs/rasters/
+outputs/vectors/
+outputs/maps/
+outputs/reports/
+outputs/dashboards/
+
+# Exceptions: keep directory structure
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+!outputs/rasters/.gitkeep
+!outputs/vectors/.gitkeep
+!outputs/maps/.gitkeep
+!outputs/reports/.gitkeep
+!outputs/dashboards/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.DS_Store
+
+# GDAL / QGIS temp files
+*.aux.xml
+*.prj
+*.cpg
+*.dbf
+*.qmd

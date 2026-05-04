@@ -1,0 +1,49 @@
+# ============================================================
+# Study Area Configuration
+# Oyo Rural Suitability Engine
+# Phase 2 finalised — 14 LGAs from filtered boundary file
+# ============================================================
+
+study_area:
+  state: "Oyo State"
+  country: "Nigeria"
+  crs_geographic: "EPSG:4326"
+  crs_projected: "EPSG:32631"      # UTM Zone 31N
+
+  # 14 confirmed rural LGAs (as in oyo_rural_lgas.gpkg, column: LGA)
+  lgas:
+    - {name: "Irepo",         code: "IRP", senatorial_district: "Oyo North",   headquarters: "Kisi"}
+    - {name: "Olorunsogo",    code: "OLR", senatorial_district: "Oyo North",   headquarters: "Igbeti"}
+    - {name: "Orelope",       code: "ORP", senatorial_district: "Oyo North",   headquarters: "Igboho"}
+    - {name: "Saki East",     code: "SKE", senatorial_district: "Oyo North",   headquarters: "Ago-Amodu"}
+    - {name: "Saki West",     code: "SKW", senatorial_district: "Oyo North",   headquarters: "Saki"}
+    - {name: "Ori-Ire",       code: "ORI", senatorial_district: "Oyo North",   headquarters: "Ikoyi-Ile"}
+    - {name: "Atiba",         code: "ATB", senatorial_district: "Oyo Central", headquarters: "Ofa-Meta"}
+    - {name: "Atisbo",        code: "ATS", senatorial_district: "Oyo North",   headquarters: "Tede"}
+    - {name: "Itesiwaju",     code: "ITS", senatorial_district: "Oyo North",   headquarters: "Otu"}
+    - {name: "Iwajowa",       code: "IWJ", senatorial_district: "Oyo North",   headquarters: "Iwere-Ile"}
+    - {name: "Kajola",        code: "KJL", senatorial_district: "Oyo North",   headquarters: "Okeho"}
+    - {name: "Oyo West",      code: "OYW", senatorial_district: "Oyo Central", headquarters: "Ojongbodu"}
+    - {name: "Iseyin",        code: "ISY", senatorial_district: "Oyo North",   headquarters: "Iseyin"}
+    - {name: "Ibarapa North", code: "IBN", senatorial_district: "Oyo South",   headquarters: "Ayete"}
+
+  # Bounding box tightened to actual 14 LGA extent (WGS84)
+  bbox:
+    west: 2.90
+    east: 4.10
+    south: 7.50
+    north: 9.20
+
+  raster_resolution: 30
+  analysis_buffer_m: 5000
+
+paths:
+  data_raw:          "data/raw"
+  data_interim:      "data/interim"
+  data_processed:    "data/processed"
+  data_external:     "data/external"
+  outputs_rasters:   "outputs/rasters"
+  outputs_vectors:   "outputs/vectors"
+  outputs_maps:      "outputs/maps"
+  outputs_reports:   "outputs/reports"
+  outputs_dashboards: "outputs/dashboards"

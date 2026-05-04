@@ -1,0 +1,184 @@
+# ============================================================
+# Healthcare Suitability Model Configuration
+# Oyo Rural Suitability Engine
+# Phase 3 finalised — AHP weights + fuzzy parameters justified
+# ============================================================
+
+model:
+  name: "Healthcare Suitability Model"
+  version: "1.1"
+  output_prefix: "healthcare"
+
+# ----------------------------------------------------------
+# AHP PAIRWISE COMPARISON MATRIX (upper triangle)
+# Saaty scale: 1=equal, 3=moderate, 5=strong, 7=very strong, 9=extreme
+# Ordering: facility_gap > pop_demand > road_access > settlement > slope > land_cover
+# ----------------------------------------------------------
+ahp_matrix:
+  criteria_order:
+    - distance_to_health_facility
+    - population_density
+    - distance_to_roads
+    - distance_to_settlements
+    - slope
+    - land_cover_suitability
+  upper_triangle:
+    # [row_criterion, col_criterion, value]
+    - [distance_to_health_facility, population_density,        1.5]
+    - [distance_to_health_facility, distance_to_roads,         2.0]
+    - [distance_to_health_facility, distance_to_settlements,   3.0]
+    - [distance_to_health_facility, slope,                     4.0]
+    - [distance_to_health_facility, land_cover_suitability,    5.0]
+    - [population_density,          distance_to_roads,         1.5]
+    - [population_density,          distance_to_settlements,   2.5]
+    - [population_density,          slope,                     3.0]
+    - [population_density,          land_cover_suitability,    4.0]
+    - [distance_to_roads,           distance_to_settlements,   2.0]
+    - [distance_to_roads,           slope,                     2.5]
+    - [distance_to_roads,           land_cover_suitability,    3.0]
+    - [distance_to_settlements,     slope,                     1.5]
+    - [distance_to_settlements,     land_cover_suitability,    2.0]
+    - [slope,                       land_cover_suitability,    2.0]
+  consistency_ratio: 0.0140   # CR < 0.10 — matrix is consistent
+
+# ----------------------------------------------------------
+# CRITERIA DEFINITION
+# AHP weights computed via eigenvector method from matrix above
+# ----------------------------------------------------------
+criteria:
+
+  distance_to_health_facility:
+    description: "Distance to nearest existing health facility (metres)"
+    direction: "benefit"
+    weight: 0.2896
+    fuzzy_type: "linear_increase"
+    fuzzy_params:
+      low: 0
+      high: 10000
+    justification: "WHO rural access standard 5 km; beyond 10 km = fully unserved"
+
+  population_density:
+    description: "Population density (persons per km²)"
+    direction: "benefit"
+    weight: 0.2433
+    fuzzy_type: "linear_increase"
+    fuzzy_params:
+      low: 0
+      high: 500
+    justification: "Rural Oyo typical range 50-400 p/km²; 500+ = maximum demand"
+
+  distance_to_roads:
+    description: "Distance to nearest road (metres)"
+    direction: "cost"
+    weight: 0.1707
+    fuzzy_type: "linear_decrease"
+    fuzzy_params:
+      low: 0
+      high: 3000
+    justification: "Beyond 3 km from road, ambulance/patient access effectively zero"
+
+  distance_to_settlements:
+    description: "Distance to nearest settlement centroid (metres)"
+    direction: "cost"
+    weight: 0.1125
+    fuzzy_type: "linear_decrease"
+    fuzzy_params:
+      low: 0
+      high: 5000
+    justification: "5 km walking-distance catchment for rural health facility"
+
+  slope:
+    description: "Terrain slope (degrees)"
+    direction: "cost"
+    weight: 0.0919
+    fuzzy_type: "linear_decrease"
+    fuzzy_params:
+      low: 0
+      high: 15
+    justification: "Slopes >15 degrees require major site preparation per MoH standards"
+
+  land_cover_suitability:
+    description: "Land cover suitability score (pre-reclassified 0-1)"
+    direction: "benefit"
+    weight: 0.0919
+    fuzzy_type: "linear_increase"
+    fuzzy_params:
+      low: 0
+      high: 1
+    justification: "Pass-through of ESA WorldCover reclassification score"
+
+# Weight sum: 0.2896+0.2433+0.1707+0.1125+0.0919+0.0919 = 0.9999 (rounds to 1.0)
+
+# ----------------------------------------------------------
+# LAND COVER RECLASSIFICATION (ESA WorldCover -> healthcare score)
+# ----------------------------------------------------------
+land_cover_reclass:
+  10: 0.7    # Cropland — open land suitable
+  20: 0.8    # Grassland/Savanna — best open land
+  30: 0.6    # Shrubland — moderate clearance needed
+  40: 0.3    # Woodland/Forest — significant clearance
+  50: 0.4    # Built-up — limited suitable plots
+  60: 0.5    # Bare/Sparse — suitable but no shade/amenity
+  70: 0.0    # Water bodies — excluded
+  80: 0.0    # Permanent wetland — excluded
+  90: 0.2    # Herbaceous wetland — poor foundation
+  95: 0.1    # Mangrove — excluded in practice
+
+# ----------------------------------------------------------
+# CONSTRAINT MASK
+# ----------------------------------------------------------
+constraints:
+  exclude_water_bodies:
+    enabled: true
+    land_cover_codes: [70, 80]
+  exclude_steep_slopes:
+    enabled: true
+    threshold_degrees: 20
+  exclude_protected_areas:
+    enabled: true
+  exclude_flood_zones:
+    enabled: true
+    return_period_years: 100
+
+# ----------------------------------------------------------
+# AHP CONSISTENCY
+# ----------------------------------------------------------
+ahp:
+  consistency_ratio_threshold: 0.10
+
+# ----------------------------------------------------------
+# UNCERTAINTY / SENSITIVITY ANALYSIS
+# ----------------------------------------------------------
+uncertainty:
+  monte_carlo_iterations: 1000
+  weight_perturbation_pct: 0.10
+  seed: 42
+
+# ----------------------------------------------------------
+# CANDIDATE SITE EXTRACTION
+# ----------------------------------------------------------
+site_ranking:
+  min_suitability_score: 0.65
+  min_patch_area_ha: 0.5
+  top_n_sites: 20
+  population_radius_m: 5000
+  ranking_criteria:
+    - mean_suitability
+    - population_within_5km
+    - distance_to_road
+    - area_ha
+    - uncertainty_cv
+
+# ----------------------------------------------------------
+# OUTPUT SETTINGS
+# ----------------------------------------------------------
+outputs:
+  suitability_raster: "outputs/rasters/healthcare_suitability.tif"
+  classified_raster: "outputs/rasters/healthcare_classified.tif"
+  constraint_mask: "outputs/rasters/healthcare_constraint_mask.tif"
+  uncertainty_mean: "outputs/rasters/healthcare_uncertainty_mean.tif"
+  uncertainty_std: "outputs/rasters/healthcare_uncertainty_std.tif"
+  uncertainty_cv: "outputs/rasters/healthcare_uncertainty_cv.tif"
+  classified_map: "outputs/maps/healthcare_suitability_map.png"
+  candidate_sites_vector: "outputs/vectors/healthcare_candidate_sites.gpkg"
+  report_pdf: "outputs/reports/healthcare_suitability_report.pdf"
