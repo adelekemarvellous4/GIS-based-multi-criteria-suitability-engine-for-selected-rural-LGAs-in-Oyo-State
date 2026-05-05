@@ -1,7 +1,8 @@
+# Streamlit Cloud optimised — lightweight dependencies only
+# geopandas is loaded conditionally so the app works even without it
 streamlit>=1.28
-streamlit-folium>=0.15
-geopandas>=1.0
-folium>=0.14
 pandas>=2.0
 matplotlib>=3.7
 numpy>=1.24
+folium>=0.14
+streamlit-folium>=0.15
