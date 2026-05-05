@@ -151,7 +151,7 @@ st.sidebar.markdown(
     "GIS-Based MCDA · AHP-WLC · Monte Carlo uncertainty · "
     "14 rural LGAs · Oyo State, Nigeria")
 st.sidebar.markdown(
-    "[📂 GitHub Repository](https://github.com/YOUR_USERNAME/oyo-rural-suitability-engine)")
+    "[📂 GitHub Repository](https://github.com/adelekemarvellous4/GIS-based-multi-criteria-suitability-engine-for-selected-rural-LGAs-in-Oyo-State)")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 icon = "🏥" if model_name == "healthcare" else "🌾"
@@ -195,7 +195,7 @@ if "Overview" in view:
         for bar, pct in zip(bars, pcts[::-1]):
             ax.text(bar.get_width() + max(areas)*0.01, bar.get_y() + bar.get_height()/2,
                     f"{pct:.1f}%", va="center", fontsize=9,
-                    color="#333333")
+                    color="#FFFFFF")
         ax.set_xlabel("Area (ha)", fontsize=9)
         ax.set_xlim(0, max(areas) * 1.18)
         ax.spines[["top","right"]].set_visible(False)
