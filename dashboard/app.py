@@ -34,6 +34,21 @@ try:
 except Exception:
     HAS_GPD = False
 
+# ── Matplotlib theme fix (works on both light and dark Streamlit themes) ─────
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+plt.rcParams.update({
+    "text.color":        "#FFFFFF",
+    "axes.labelcolor":   "#FFFFFF",
+    "xtick.color":       "#FFFFFF",
+    "ytick.color":       "#FFFFFF",
+    "axes.edgecolor":    "#555555",
+    "figure.facecolor":  "#0E1117",
+    "axes.facecolor":    "#0E1117",
+    "axes.titlecolor":   "#FFFFFF",
+})
+
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Oyo Rural Suitability Engine",
@@ -185,8 +200,6 @@ if "Overview" in view:
         ax.set_xlim(0, max(areas) * 1.18)
         ax.spines[["top","right"]].set_visible(False)
         ax.tick_params(labelsize=9)
-        ax.set_facecolor("none")
-        fig.patch.set_alpha(0)
         st.pyplot(fig)
         plt.close()
 
@@ -204,8 +217,6 @@ if "Overview" in view:
         ax2.set_xlim(0, max(weights) * 1.35)
         ax2.spines[["top","right"]].set_visible(False)
         ax2.tick_params(labelsize=9)
-        ax2.set_facecolor("none")
-        fig2.patch.set_alpha(0)
         st.pyplot(fig2)
         plt.close()
 
